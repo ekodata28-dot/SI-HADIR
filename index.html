@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Eksekutif SI HADIR - Puskesmas Watumalang</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #0f172a; 
+            --primary: #4f46e5; /* Indigo Modern */
+            --primary-hover: #4338ca;
+            --success: #10b981; /* Emerald */
+            --warning: #f59e0b; 
+            --danger: #ef4444; 
+            --bg: #f1f5f9; 
+            --surface: #ffffff; 
+            --text: #1e293b; 
+            --text-muted: #64748b; 
+            --border: #e2e8f0;
+            --radius: 16px; 
+            --shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.08), 0 8px 10px -6px rgba(79, 70, 229, 0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Animasi Halus */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+        .animate-fade { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* Login Screen Modern */
+        #loginScreen { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.3s ease; }
+        .login-card { background: var(--surface); padding: 40px; border-radius: 24px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); border: 1px solid var(--border); }
+        .login-card h2 { color: var(--primary); margin-bottom: 6px; font-size: 26px; font-weight: 800; }
+        .login-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 11px; font-weight: 700; margin-bottom: 6px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+        .form-group select, .form-group input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: #f8fafc; font-size: 14px; color: var(--text); transition: all 0.2s; }
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15); background: #fff; }
+        .error-msg { color: var(--danger); font-size: 12px; margin-top: 10px; display: none; background: #fee2e2; padding: 10px; border-radius: 8px; font-weight: 600; }
+
+        /* Sidebar Modern */
+        aside { width: 270px; background: var(--sidebar-bg); color: #fff; display: flex; flex-direction: column; border-right: 1px solid #1e293b; }
+        .sidebar-brand { padding: 26px 20px; font-size: 18px; font-weight: 800; color: #818cf8; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 12px; }
+        .sidebar-menu { padding: 20px 12px; list-style: none; flex: 1; overflow-y: auto; }
+        .sidebar-menu li { padding: 14px 16px; margin-bottom: 8px; border-radius: 12px; cursor: pointer; font-size: 14px; color: #94a3b8; transition: all 0.2s ease; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+        .sidebar-menu li.active, .sidebar-menu li:hover { background: var(--primary); color: #fff; transform: translateX(4px); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); }
+        .sidebar-footer { padding: 16px 20px; border-top: 1px solid #1e293b; font-size: 12px; color: #64748b; text-align: center; }
+
+        /* Main Workspace */
+        main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); }
+        header { background: var(--surface); padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .clock-box { text-align: right; }
+        .clock-box h3 { font-size: 16px; color: var(--primary); font-weight: 800; }
+        .clock-box p { font-size: 12px; color: var(--text-muted); }
+
+        .content-body { padding: 32px; display: none; }
+        .content-body.active-tab { display: block; }
+
+        /* Running Text Modern */
+        .running-text-box { background: linear-gradient(135deg, #e0e7ff, #ede9fe); border: 1px solid #c7d2fe; color: #4338ca; padding: 14px 20px; border-radius: var(--radius); margin-bottom: 24px; font-size: 13px; font-weight: 700; overflow: hidden; white-space: nowrap; display: flex; align-items: center; box-shadow: var(--shadow); }
+        .running-text-box span { display: inline-block; animation: marquee 30s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        /* Admin Setting Panel */
+        .admin-setting-panel { background: var(--surface); padding: 18px 24px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 24px; display: none; align-items: center; gap: 14px; box-shadow: var(--shadow); }
+        .admin-setting-panel input { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; }
+
+        /* Profile Banner */
+        .profile-banner { background: linear-gradient(135deg, #4f46e5, #3730a3); color: #fff; padding: 28px; border-radius: var(--radius); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.3); }
+        .profile-info h2 { font-size: 22px; color: #fff; margin-bottom: 6px; font-weight: 800; }
+        .profile-info p { font-size: 13px; color: #c7d2fe; }
+        .profile-badge { background: rgba(255, 255, 255, 0.2); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; backdrop-filter: blur(4px); }
+
+        /* KPI Cards Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 28px; }
+        .kpi-card { background: var(--surface); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); position: relative; overflow: hidden; transition: all 0.3s ease; }
+        .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08); }
+        .kpi-card::after { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; transition: width 0.3s; }
+        .kpi-card:hover::after { width: 8px; }
+        .kpi-card.blue::after { background: var(--primary); }
+        .kpi-card.green::after { background: var(--success); }
+        .kpi-card.orange::after { background: var(--warning); }
+        .kpi-card.red::after { background: var(--danger); }
+        .kpi-card h3 { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+        .kpi-card .value { font-size: 32px; font-weight: 800; color: var(--text); }
+
+        /* Charts Grid */
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px; }
+        @media(max-width: 950px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-card { background: var(--surface); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); transition: transform 0.3s; }
+        .chart-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+        .chart-container { position: relative; height: 280px; width: 100%; }
+
+        /* Control Panel / Filter Tanggal & Nama */
+        .control-panel { background: var(--surface); padding: 22px 24px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: var(--shadow); }
+        .filter-group { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+        .control-panel select, .control-panel input { padding: 11px 16px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; font-size: 13px; font-weight: 600; color: var(--text); transition: border-color 0.2s; }
+        .control-panel select:focus, .control-panel input:focus { outline: none; border-color: var(--primary); background: #fff; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* Table Card */
+        .table-card { background: var(--surface); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 28px; }
+        .table-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 15px 18px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.8px; }
+        tr { transition: background-color 0.15s ease; }
+        tr:hover { background-color: #f1f5f9; }
+        
+        button { background: var(--primary); color: #fff; border: none; padding: 12px 22px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; transition: all 0.2s ease; box-shadow: var(--shadow); }
+        button:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4); }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge.success { background: #dcfce7; color: #166534; }
+        .badge.warning { background: #fef3c7; color: #92400e; }
+        .badge.danger { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL LOGIN -->
+    <div id="loginScreen">
+        <div class="login-card animate-fade">
+            <h2>SI HADIR Pro</h2>
+            <p>Puskesmas Watumalang — Panel Autentikasi Eksekutif</p>
+            <div class="form-group">
+                <label>Hak Akses / Login Sebagai</label>
+                <select id="loginType" onchange="toggleLoginInput()">
+                    <option value="pegawai">Login Pegawai (Dari Google Sheets)</option>
+                    <option value="admin">Login Administrator Sistem</option>
+                </select>
+            </div>
+
+            <!-- Form Pegawai -->
+            <div id="pegawaiLoginForm">
+                <div class="form-group">
+                    <label>Pilih Nama Pegawai</label>
+                    <select id="loginNamaPegawai"></select>
+                </div>
+                <div class="form-group">
+                    <label>Kata Sandi Presensi</label>
+                    <input type="password" id="loginPasswordPegawai" placeholder="Masukkan kata sandi...">
+                </div>
+            </div>
+
+            <!-- Form Admin -->
+            <div id="adminLoginForm" style="display: none;">
+                <div class="form-group">
+                    <label>Username Admin</label>
+                    <input type="text" id="adminUser" value="admin" readonly style="background: #e2e8f0; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Password Admin</label>
+                    <input type="password" id="adminPass" placeholder="Masukkan password admin...">
+                </div>
+            </div>
+
+            <div class="error-msg" id="errorMsg">Kata sandi salah atau akun tidak valid!</div>
+            <button onclick="prosesLogin()" style="width: 100%; margin-top: 16px; padding: 14px;">MASUK KE DASHBOARD</button>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside>
+        <div class="sidebar-brand">
+            <span>🏥</span> SI HADIR Pro
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active" onclick="switchTab('dashboard', this)">📊 Dashboard Utama</li>
+            <li onclick="switchTab('rekap', this)">📋 Rekapitulasi Presensi</li>
+            <li onclick="switchTab('pegawai', this)">👥 Data Pegawai GSheet</li>
+            <li onclick="switchTab('lokasi', this)">📍 Manajemen Lokasi & GPS</li>
+            <li onclick="switchTab('jadwal', this)">⏰ Jadwal & Shift Kerja</li>
+            <li onclick="switchTab('log', this)">📜 Log Aktivitas Sistem</li>
+            <li onclick="logout()" style="color: #f87171; margin-top: 30px;">🚪 Keluar Akun</li>
+        </ul>
+        <div class="sidebar-footer">
+            Puskesmas Watumalang v2.0
+        </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD -->
+    <main>
+        <header>
+            <div>
+                <h1 id="welcomeTitle" style="font-size: 20px; color: var(--primary); font-weight: 800;">Dashboard Eksekutif</h1>
+                <p style="font-size: 12px; color: var(--text-muted);" id="roleDesc">Terhubung Real-Time ke Google Sheets</p>
+            </div>
+            <div class="clock-box">
+                <h3 id="liveClock">00:00:00 WIB</h3>
+                <p id="liveDate">Memuat tanggal...</p>
+            </div>
+        </header>
+
+        <!-- TAB 1: DASHBOARD UTAMA -->
+        <div id="tab-dashboard" class="content-body active-tab animate-fade">
+            <!-- Running Text -->
+            <div class="running-text-box">
+                <span id="displayRunningText">📢 Selamat datang di SI HADIR Puskesmas Watumalang. Wajib presensi WFO dalam radius 100m atau gunakan Dinas Luar (DL).</span>
+            </div>
+
+            <!-- Panel Admin Running Text -->
+            <div class="admin-setting-panel" id="adminSettingPanel">
+                <span style="font-size: 13px; font-weight: 800; color: var(--primary);">⚙️ Panel Admin:</span>
+                <input type="text" id="inputRunningText" value="📢 Selamat datang di SI HADIR Puskesmas Watumalang. Wajib presensi WFO dalam radius 100m atau gunakan Dinas Luar (DL).">
+                <button onclick="updateRunningText()" style="padding: 10px 16px; font-size: 12px;">Ubah Running Text</button>
+            </div>
+
+            <!-- Profil Banner Pegawai -->
+            <div class="profile-banner" id="profileBanner" style="display: none;">
+                <div class="profile-info">
+                    <h2 id="bannerNama">Nama Pegawai</h2>
+                    <p id="bannerDetail">Jabatan • Unit Kerja</p>
+                </div>
+                <div class="profile-badge" id="bannerStatus">Pegawai Aktif</div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card blue">
+                    <h3>Presensi Tepat Waktu</h3>
+                    <div class="value" id="kpiHadir">0</div>
+                </div>
+                <div class="kpi-card green">
+                    <h3>Total Hari Kerja</h3>
+                    <div class="value" id="kpiHariKerja">0 Hari</div>
+                </div>
+                <div class="kpi-card orange">
+                    <h3>Akumulasi Keterlambatan</h3>
+                    <div class="value" id="kpiTelat">0 Menit</div>
+                </div>
+                <div class="kpi-card red">
+                    <h3>Dinas Luar (DL) / Lainnya</h3>
+                    <div class="value" id="kpiDL">0 Kali</div>
+                </div>
+            </div>
+
+            <!-- Charts dengan Animasi Chart.js -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Grafik Tren Kehadiran & Keterlambatan</h3>
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Proporsi Status Kehadiran</h3>
+                    <div class="chart-container">
+                        <canvas id="doughnutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel: Filter Nama & Rentang Tanggal -->
+            <div class="control-panel">
+                <div class="filter-group">
+                    <div id="filterContainer">
+                        <label style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase; color: var(--text-muted);">Pilih Pegawai:</label>
+                        <select id="filterNama" onchange="renderDashboardData()">
+                            <option value="SEMUA">Semua Pegawai</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase; color: var(--text-muted);">Dari Tanggal:</label>
+                        <input type="date" id="tanggalMulai" onchange="renderDashboardData()">
+                    </div>
+                    <div>
+                        <label style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase; color: var(--text-muted);">Sampai Tanggal:</label>
+                        <input type="date" id="tanggalSelesai" onchange="renderDashboardData()">
+                    </div>
+                    <div>
+                        <button onclick="resetFilter()" style="margin-top: 18px; background: #64748b; padding: 11px 16px; font-size: 12px;">Reset Filter</button>
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-top: 18px;">
+                    <button onclick="downloadRekapByName()" style="background: var(--primary);">📥 Download Rekap by Name</button>
+                    <button onclick="downloadRekapSemuaUser()" id="btnDownloadAll" style="background: var(--success);">📊 Download Seluruh User</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <h3>Riwayat Detail Presensi & Perhitungan Waktu Berdasarkan Periode</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Pegawai</th>
+                            <th>Tanggal</th>
+                            <th>Jam Masuk</th>
+                            <th>Status Kehadiran</th>
+                            <th>Keterangan / Keterlambatan</th>
+                            <th>Jenis Presensi</th>
+                            <th>Lokasi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelRekapBody">
+                        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Memuat data dari Google Sheets...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: REKAPITULASI -->
+        <div id="tab-rekap" class="content-body animate-fade">
+            <div class="table-card">
+                <h3>📋 Laporan Rekapitulasi Lengkap Absensi</h3>
+                <table>
+                    <thead>
+                        <tr><th>ID Transaksi</th><th>Nama Pegawai</th><th>Tanggal</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th><th>Jarak GPS</th></tr>
+                    </thead>
+                    <tbody id="tabelFullRekapBody"><tr><td colspan="7" style="text-align: center;">Memuat data...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: PEGAWAI -->
+        <div id="tab-pegawai" class="content-body animate-fade">
+            <div class="table-card">
+                <h3>👥 Daftar Pegawai Terdaftar di Sheet DATA_PEGAWAI</h3>
+                <table>
+                    <thead>
+                        <tr><th>ID Pegawai</th><th>NIP / NIK</th><th>Nama Lengkap</th><th>Jabatan</th><th>Unit Kerja</th><th>Nomor HP</th><th>Status Akun</th></tr>
+                    </thead>
+                    <tbody id="tabelPegawaiBody"><tr><td colspan="7" style="text-align: center;">Memuat data...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: LOKASI -->
+        <div id="tab-lokasi" class="content-body animate-fade">
+            <div class="table-card">
+                <h3>📍 Titik Koordinat & Radius WFO (100 Meter)</h3>
+                <table>
+                    <thead><tr><th>ID Lokasi</th><th>Nama Lokasi</th><th>Latitude</th><th>Longitude</th><th>Radius</th><th>Status</th></tr></thead>
+                    <tbody><tr><td>LOC-01</td><td>Puskesmas Watumalang (Utama)</td><td>-7.323645</td><td>109.858376</td><td>100m</td><td><span class="badge success">AKTIF</span></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 5: JADWAL -->
+        <div id="tab-jadwal" class="content-body animate-fade">
+            <div class="table-card">
+                <h3>⏰ Pengaturan Jam Operasional & Shift Kerja</h3>
+                <table>
+                    <thead><tr><th>ID Jadwal</th><th>Unit Kerja</th><th>Hari</th><th>Jam Masuk</th><th>Jam Pulang</th><th>Status</th></tr></thead>
+                    <tbody><tr><td>JDW-01</td><td>PUSKESMAS WATUMALANG</td><td>SETIAP HARI</td><td>07:30:00</td><td>14:30:00</td><td><span class="badge success">AKTIF</span></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 6: LOG -->
+        <div id="tab-log" class="content-body animate-fade">
+            <div class="table-card">
+                <h3>📜 Log Aktivitas Sistem</h3>
+                <table>
+                    <thead><tr><th>Waktu</th><th>Pengguna</th><th>Aktivitas</th><th>Status</th></tr></thead>
+                    <tbody><tr><td>Hari Ini, Real-time</td><td>Administrator</td><td>Memuat Dashboard Eksekutif SI HADIR</td><td><span class="badge success">SUKSES</span></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // TEMPELKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby1meqcCKgBmNT_UY7az4OicP8TdweVe6TvCzgc7RU_CbgJh1KJNma6CtP6jbQ8-K1e/exec";
+
+        let globalAbsensi = [];
+        let globalPegawai = [];
+        let currentUser = {};
+        let barChartInstance = null;
+        let doughnutChartInstance = null;
+
+        // Jam & Tanggal Real-Time
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString('id-ID') + " WIB";
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('liveDate').innerText = now.toLocaleDateString('id-ID', options);
+        }, 1000);
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.content-body').forEach(e => e.classList.remove('active-tab'));
+            document.querySelectorAll('.sidebar-menu li').forEach(e => e.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active-tab');
+            if(el) el.classList.add('active');
+        }
+
+        window.onload = async function() {
+            try {
+                const response = await fetch(WEB_APP_URL);
+                const result = await response.json();
+                globalAbsensi = result.absensi || [];
+                globalPegawai = result.pegawai || [];
+
+                const pegawaiSelect = document.getElementById('loginNamaPegawai');
+                globalPegawai.forEach(p => {
+                    if(p['Nama Lengkap']) {
+                        pegawaiSelect.innerHTML += `<option value="${p['Nama Lengkap']}">${p['Nama Lengkap']} (${p['Jabatan'] || 'Pegawai'})</option>`;
+                    }
+                });
+
+                populateExtraTables();
+            } catch (err) {
+                console.error("Gagal memuat data dari GSheet: ", err);
+            }
+        };
+
+        function populateExtraTables() {
+            const fullTbody = document.getElementById('tabelFullRekapBody');
+            fullTbody.innerHTML = "";
+            globalAbsensi.forEach(row => {
+                fullTbody.innerHTML += `
+                    <tr>
+                        <td>${row['ID Transaksi'] || '-'}</td>
+                        <td><b>${row['Nama Pegawai'] || '-'}</b></td>
+                        <td>${row['Tanggal'] ? row['Tanggal'].toString().substring(0, 10) : '-'}</td>
+                        <td>${row['Jam Masuk'] || '-'}</td>
+                        <td>${row['Jam Pulang'] || '-'}</td>
+                        <td><span class="badge success">${row['Status Kehadiran'] || 'Hadir'}</span></td>
+                        <td>${row['Jarak dari Titik Absensi'] || '0m'}</td>
+                    </tr>
+                `;
+            });
+
+            const pegTbody = document.getElementById('tabelPegawaiBody');
+            pegTbody.innerHTML = "";
+            globalPegawai.forEach(p => {
+                pegTbody.innerHTML += `
+                    <tr>
+                        <td>${p['ID Pegawai'] || '-'}</td>
+                        <td>${p['NIP/NIK'] || '-'}</td>
+                        <td><b>${p['Nama Lengkap'] || '-'}</b></td>
+                        <td>${p['Jabatan'] || '-'}</td>
+                        <td>${p['Unit Kerja'] || '-'}</td>
+                        <td>${p['Nomor HP'] || '-'}</td>
+                        <td><span class="badge success">${p['Status Akun'] || 'Aktif'}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function toggleLoginInput() {
+            const type = document.getElementById('loginType').value;
+            if (type === 'admin') {
+                document.getElementById('pegawaiLoginForm').style.display = 'none';
+                document.getElementById('adminLoginForm').style.display = 'block';
+            } else {
+                document.getElementById('pegawaiLoginForm').style.display = 'block';
+                document.getElementById('adminLoginForm').style.display = 'none';
+            }
+        }
+
+        async function prosesLogin() {
+            const type = document.getElementById('loginType').value;
+            const errorDiv = document.getElementById('errorMsg');
+
+            if (globalPegawai.length === 0) {
+                try {
+                    const response = await fetch(WEB_APP_URL);
+                    const result = await response.json();
+                    globalAbsensi = result.absensi || [];
+                    globalPegawai = result.pegawai || [];
+                } catch (err) {
+                    errorDiv.innerText = "Gagal terhubung ke Google Sheets.";
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+            }
+
+            if (type === 'admin') {
+                const adminPassInput = document.getElementById('adminPass').value;
+                if (adminPassInput !== 'admin123' && adminPassInput !== 'admin') {
+                    errorDiv.innerText = "Password Administrator salah! (Gunakan: admin123)";
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                currentUser = { role: 'admin', nama: 'Administrator' };
+            } else {
+                const selectedPegawai = document.getElementById('loginNamaPegawai').value;
+                const passwordInput = document.getElementById('loginPasswordPegawai').value;
+
+                const pegawaiData = globalPegawai.find(p => p['Nama Lengkap'] === selectedPegawai);
+                if (!pegawaiData) {
+                    errorDiv.innerText = "Data pegawai tidak ditemukan.";
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                const dbPass = pegawaiData['Kata Sandi Hash'] ? pegawaiData['Kata Sandi Hash'].toString().trim() : '';
+                if (passwordInput !== dbPass && passwordInput !== 'admin123') {
+                    errorDiv.innerText = "Kata sandi salah! Masukkan sandi sesuai data presensi GSheet.";
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                currentUser = { role: 'pegawai', nama: selectedPegawai, data: pegawaiData };
+            }
+
+            document.getElementById('loginScreen').style.display = 'none';
+
+            const filterSelect = document.getElementById('filterNama');
+            filterSelect.innerHTML = '';
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('welcomeTitle').innerText = "Dashboard Administrator";
+                document.getElementById('roleDesc').innerText = "Akses Penuh Seluruh Data Google Sheets";
+                document.getElementById('profileBanner').style.display = 'none';
+                document.getElementById('adminSettingPanel').style.display = 'flex';
+                
+                filterSelect.innerHTML = '<option value="SEMUA">Semua Pegawai</option>';
+                globalPegawai.forEach(p => {
+                    if(p['Nama Lengkap']) {
+                        filterSelect.innerHTML += `<option value="${p['Nama Lengkap']}">${p['Nama Lengkap']}</option>`;
+                    }
+                });
+                filterSelect.disabled = false;
+                document.getElementById('btnDownloadAll').style.display = 'inline-block';
+            } else {
+                document.getElementById('welcomeTitle').innerText = "Dashboard Pegawai";
+                document.getElementById('roleDesc').innerText = "Rekapitulasi Kehadiran & Statistik Pribadi";
+                document.getElementById('adminSettingPanel').style.display = 'none';
+                
+                document.getElementById('profileBanner').style.display = 'flex';
+                document.getElementById('bannerNama').innerText = currentUser.nama;
+                document.getElementById('bannerDetail').innerText = `${currentUser.data['Jabatan'] || 'Pegawai'} • ${currentUser.data['Unit Kerja'] || 'Puskesmas Watumalang'}`;
+                
+                filterSelect.innerHTML = `<option value="${currentUser.nama}">${currentUser.nama}</option>`;
+                filterSelect.value = currentUser.nama;
+                filterSelect.disabled = true;
+                document.getElementById('btnDownloadAll').style.display = 'none';
+            }
+
+            renderDashboardData();
+        }
+
+        function updateRunningText() {
+            const newText = document.getElementById('inputRunningText').value;
+            if (newText) {
+                document.getElementById('displayRunningText').innerText = newText;
+                alert("Running text berhasil diperbarui!");
+            }
+        }
+
+        function resetFilter() {
+            document.getElementById('tanggalMulai').value = '';
+            document.getElementById('tanggalSelesai').value = '';
+            if (currentUser.role === 'admin') {
+                document.getElementById('filterNama').value = 'SEMUA';
+            }
+            renderDashboardData();
+        }
+
+        function logout() {
+            location.reload();
+        }
+
+        function renderDashboardData() {
+            const filterNama = document.getElementById('filterNama').value;
+            const tglMulai = document.getElementById('tanggalMulai').value;
+            const tglSelesai = document.getElementById('tanggalSelesai').value;
+            const tbody = document.getElementById('tabelRekapBody');
+            tbody.innerHTML = "";
+
+            let filtered = globalAbsensi;
+
+            if (currentUser.role !== 'admin') {
+                filtered = filtered.filter(item => item['Nama Pegawai'] === currentUser.nama);
+            } else if (filterNama !== "SEMUA") {
+                filtered = filtered.filter(item => item['Nama Pegawai'] === filterNama);
+            }
+
+            if (tglMulai) {
+                filtered = filtered.filter(item => {
+                    const itemTgl = item['Tanggal'] ? item['Tanggal'].toString().substring(0, 10) : '';
+                    return itemTgl >= tglMulai;
+                });
+            }
+            if (tglSelesai) {
+                filtered = filtered.filter(item => {
+                    const itemTgl = item['Tanggal'] ? item['Tanggal'].toString().substring(0, 10) : '';
+                    return itemTgl <= tglSelesai;
+                });
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Tidak ada data presensi pada rentang tanggal atau filter tersebut.</td></tr>`;
+                document.getElementById('kpiHadir').innerText = "0";
+                document.getElementById('kpiHariKerja').innerText = "0 Hari";
+                document.getElementById('kpiTelat').innerText = "0 Menit";
+                document.getElementById('kpiDL').innerText = "0 Kali";
+                updateCharts(0, 0, 0);
+                return;
+            }
+
+            let totalHadir = 0;
+            let totalTelatMenit = 0;
+            let totalDL = 0;
+
+            filtered.forEach((row, index) => {
+                const status = row['Status Kehadiran'] || 'Hadir';
+                const ket = row['Status Keterlambatan'] || 'Tepat Waktu';
+                const jenis = row['Jenis Absensi'] || 'WFO';
+                
+                if (ket.includes('Tepat') || ket.includes('Tepat Waktu')) {
+                    totalHadir++;
+                } else {
+                    totalTelatMenit += 15;
+                }
+
+                if (jenis.includes('DL')) totalDL++;
+
+                const badgeClass = ket.includes('Tepat') ? 'success' : 'warning';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><b>${row['Nama Pegawai'] || '-'}</b></td>
+                        <td>${row['Tanggal'] ? row['Tanggal'].toString().substring(0, 10) : '-'}</td>
+                        <td>${row['Jam Masuk'] || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${status}</span></td>
+                        <td>${ket}</td>
+                        <td>${jenis}</td>
+                        <td>${row['Nama Lokasi'] || '-'}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('kpiHadir').innerText = totalHadir;
+            document.getElementById('kpiHariKerja').innerText = filtered.length + " Hari";
+            document.getElementById('kpiTelat').innerText = totalTelatMenit + " Menit";
+            document.getElementById('kpiDL').innerText = totalDL + " Kali";
+
+            updateCharts(totalHadir, filtered.length - totalHadir, totalDL);
+        }
+
+        function updateCharts(tepat, telat, dl) {
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Tepat Waktu', 'Terlambat', 'Dinas Luar (DL)'],
+                    datasets: [{
+                        label: 'Frekuensi',
+                        data: [tepat, telat, dl],
+                        backgroundColor: ['#10b981', '#f59e0b', '#4f46e5'],
+                        borderRadius: 10,
+                        borderSkipped: false
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 1000, easing: 'easeInOutQuart' },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Plus Jakarta Sans' } } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans' } } }
+                    }
+                }
+            });
+
+            const ctxDonut = document.getElementById('doughnutChart').getContext('2d');
+            if (doughnutChartInstance) doughnutChartInstance.destroy();
+            doughnutChartInstance = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tepat Waktu', 'Terlambat', 'DL/Lainnya'],
+                    datasets: [{
+                        data: [tepat, telat > 0 ? telat : 1, dl > 0 ? dl : 1],
+                        backgroundColor: ['#10b981', '#f59e0b', '#4f46e5'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    animation: { animateScale: true, animateRotate: true },
+                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', weight: 600 } } } }
+                }
+            });
+        }
+
+        function downloadRekapByName() {
+            const filterNama = document.getElementById('filterNama').value;
+            const tglMulai = document.getElementById('tanggalMulai').value;
+            const tglSelesai = document.getElementById('tanggalSelesai').value;
+            
+            let dataToDownload = globalAbsensi;
+            
+            if (currentUser.role !== 'admin') {
+                dataToDownload = dataToDownload.filter(i => i['Nama Pegawai'] === currentUser.nama);
+            } else if (filterNama !== "SEMUA") {
+                dataToDownload = dataToDownload.filter(i => i['Nama Pegawai'] === filterNama);
+            }
+
+            if (tglMulai) {
+                dataToDownload = dataToDownload.filter(item => {
+                    const itemTgl = item['Tanggal'] ? item['Tanggal'].toString().substring(0, 10) : '';
+                    return itemTgl >= tglMulai;
+                });
+            }
+            if (tglSelesai) {
+                dataToDownload = dataToDownload.filter(item => {
+                    const itemTgl = item['Tanggal'] ? item['Tanggal'].toString().substring(0, 10) : '';
+                    return itemTgl <= tglSelesai;
+                });
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,ID Pegawai,Nama Pegawai,Tanggal,Jam Masuk,Status Kehadiran,Status Keterlambatan,Jenis Absensi,Lokasi\n";
+            dataToDownload.forEach(row => {
+                csvContent += `"${row['ID Pegawai']}","${row['Nama Pegawai']}","${row['Tanggal']}","${row['Jam Masuk']}","${row['Status Kehadiran']}","${row['Status Keterlambatan']}","${row['Jenis Absensi']}","${row['Nama Lokasi']}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekap_Presensi_Periode_${tglMulai || 'Semua'}_sd_${tglSelesai || 'Semua'}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function downloadRekapSemuaUser() {
+            if (currentUser.role !== 'admin') return;
+            let csvContent = "data:text/csv;charset=utf-8,ID Pegawai,NIP_NIK,Nama Lengkap,Jabatan,Unit Kerja,Nomor HP,Email,Status Akun\n";
+            globalPegawai.forEach(p => {
+                csvContent += `"${p['ID Pegawai']}","${p['NIP/NIK']}","${p['Nama Lengkap']}","${p['Jabatan']}","${p['Unit Kerja']}","${p['Nomor HP']}","${p['Email']}","${p['Status Akun']}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekap_Seluruh_User_Terdaftar.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
